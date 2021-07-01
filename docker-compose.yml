@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+    nginx:
+        build: ./nginx
+        ports:
+            - 1500:80
+        depends_on: 
+            - core
+        restart: "on-failure"
+        networks: 
+            - ts-nginx-gunicorn
+        
+    core:
+        build: .
+        command: >
+            sh -c "
+            python menage.py makemigrations &&
+            python manage.py migrate &&
+            python manage.py collectstatic &&
+            gunicorn project.wsgi:application --bind 0.0.0.0:8000"
+        volumes: 
+            - ./:/var/www
+        ports: 
+            - 8000:8000
+        networks: 
+            - ts-nginx-gunicorn
+
+networks: 
+    ts-nginx-gunicorn:
+        name: ts-nginx-gunicorn
+        driver: bridge
